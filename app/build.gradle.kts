@@ -19,6 +19,27 @@ android {
     buildTypes {
         release { isMinifyEnabled = false }
     }
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.chaquo.python")
+}
+
+android {
+    namespace = "ir.darmaniyo.clinic"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "ir.darmaniyo.clinic"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+    }
+    buildTypes {
+        release { isMinifyEnabled = false }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -28,7 +49,7 @@ android {
 
 chaquopy {
     defaultConfig {
-        version = "3.12"
+        version = "3.8"
         pip {
             install("fastapi==0.110.0")
             install("uvicorn==0.27.1")
@@ -40,7 +61,6 @@ chaquopy {
             install("aiofiles==23.2.1")
             install("jdatetime==5.0.0")
             install("python-jose==3.3.0")
-            install("pydantic==2.5.3")
         }
     }
 }
