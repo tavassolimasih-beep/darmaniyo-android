@@ -20,9 +20,11 @@ jobs:
 
       - name: Setup Android SDK
         run: |
+          export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" > /dev/null
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -37,5 +39,3 @@ jobs:
         with:
           name: darmaniyo-apk
           path: app/build/outputs/apk/debug/*.apk
-# force update Fri Oct  9 11:18:01 +0330 2026
-# force update Fri Oct  9 13:18:31 +0330 2026
