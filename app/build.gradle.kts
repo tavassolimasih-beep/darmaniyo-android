@@ -30,7 +30,7 @@ chaquopy {
     defaultConfig {
         version = "3.8"
         pip {
-            install("fastapi==0.110.0")
+            install("fastapi==0.99.1")
             install("uvicorn==0.27.1")
             install("h11==0.14.0")
             install("SQLAlchemy==2.0.35")
@@ -40,6 +40,7 @@ chaquopy {
             install("aiofiles==23.2.1")
             install("jdatetime==5.0.0")
             install("python-jose==3.3.0")
+            install("pydantic<2")
         }
     }
 }
