@@ -40,21 +40,4 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var status: TextView
-    private var fileCallback: ValueCallback<Array<Uri>>? = null
-    private lateinit var lockView: View
-    private var authenticating = false
-    private var lastStop = 0L
-
-    private val fileChooser =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            fileCallback?.onReceiveValue(
-                WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
-            )
-            fileCallback = null
-        }
-
-    @SuppressLint("SetJavaScriptEnabled")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        val root = FrameLayout(this)
+    private var fileCallback: ValueCallback<Array<Uri>>? = 
