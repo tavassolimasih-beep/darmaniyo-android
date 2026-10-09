@@ -12,8 +12,8 @@ android {
         applicationId = "ir.darmaniyo.clinic"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 1
+        versionName = "1.0"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
     buildTypes {
@@ -31,15 +31,17 @@ chaquopy {
         version = "3.12"
         pip {
             install("fastapi==0.115.0")
-            install("uvicorn")
-            install("h11")
+            install("uvicorn==0.30.6")
+            install("h11==0.14.0")
             install("SQLAlchemy==2.0.35")
             install("python-multipart==0.0.9")
-            install("jinja2")
-            install("python-dotenv")
-            install("aiofiles")
-            install("jdatetime")
-            install("python-jose")
+            install("jinja2==3.1.4")
+            install("python-dotenv==1.0.1")
+            install("aiofiles==24.1.0")
+            install("jdatetime==5.0.0")
+            install("python-jose==3.3.0")
+            install("pydantic==2.9.2")
+            install("pydantic-core==2.23.4")
         }
     }
 }
@@ -47,5 +49,4 @@ chaquopy {
 dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.biometric:biometric:1.1.0")
 }
