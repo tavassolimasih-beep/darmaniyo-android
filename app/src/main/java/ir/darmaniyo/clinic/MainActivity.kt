@@ -1,12 +1,12 @@
 package ir.darmaniyo.clinic
 
 import android.annotation.SuppressLint
-import android.content.Intent
-import android.graphics.Color
+import android.content.res.AssetManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.webkit.ValueCallback
@@ -15,9 +15,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Button
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -29,13 +27,13 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.zip.ZipInputStream
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
         @Volatile private var serverStarted = false
         private const val HOME = "http://127.0.0.1:8000/"
+        private const val TAG = "Darmaniyo"
     }
 
     private lateinit var webView: WebView
@@ -66,7 +64,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // --- ساخت UI برنامه‌ای (بدون نیاز به layout XML) ---
+        // --- UI برنامه‌ای ---
         val root = FrameLayout(this)
         webView = WebView(this)
         root.addView(
@@ -78,17 +76,19 @@ class MainActivity : AppCompatActivity() {
         )
 
         status = TextView(this).apply {
-            setBackgroundColor(Color.parseColor("#CC000000"))
-            setTextColor(Color.WHITE)
+            setBackgroundColor(0xCC000000.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
             text = "در حال راه‌اندازی..."
             gravity = Gravity.CENTER
             visibility = View.GONE
         }
-        val statusParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT
-        ).apply { gravity = Gravity.BOTTOM }
-        root.addView(status, statusParams)
+        root.addView(
+            status,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply { gravity = Gravity.BOTTOM }
+        )
 
         setContentView(root)
 
@@ -100,7 +100,6 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = true
             allowContentAccess = true
             cacheMode = WebSettings.LOAD_DEFAULT
-            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             }
@@ -135,7 +134,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // --- احراز هویت با اثر انگشت (اختیاری، قبل از بارگذاری) ---
         authenticateThenStart()
     }
 
@@ -146,7 +144,6 @@ class MainActivity : AppCompatActivity() {
                 BiometricManager.Authenticators.DEVICE_CREDENTIAL
         )
         if (can != BiometricManager.BIOMETRIC_SUCCESS) {
-            // دستگاه پشتیبانی نمی‌کند → مستقیم ادامه بده
             startPythonServerAndLoad()
             return
         }
@@ -168,13 +165,11 @@ class MainActivity : AppCompatActivity() {
                     errString: CharSequence
                 ) {
                     super.onAuthenticationError(errorCode, errString)
-                    // در صورت خطا هم اجازه بده وارد شود (یا می‌توانی finish() کنی)
                     startPythonServerAndLoad()
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    // تلاش ناموفق: کاری نکن، کاربر می‌تواند دوباره امتحان کند
                 }
             }
         )
@@ -193,20 +188,32 @@ class MainActivity : AppCompatActivity() {
         showStatus("در حال آماده‌سازی سرور...")
         Thread {
             try {
+                // ۱) کپی فایل‌های اپ وب از assets به filesDir (فقط بار اول)
+                val webDir = File(filesDir, "web")
+                if (!webDir.exists() || webDir.list().isNullOrEmpty()) {
+                    showStatus("در حال استخراج فایل‌ها...")
+                    copyAssets("web", webDir)
+                }
+
+                // ۲) اجرای سرور پایتون
                 if (!serverStarted) {
-                    // اجرای سرور پایتون (chaquopy)
                     val py = Python.getInstance()
-                    val module = py.getModule("server")   // server.py داخل src/main/python
-                    module.callAttr("start_server")
+                    val module = py.getModule("server")
+                    val dbPath = File(filesDir, "darmaniyo.db").absolutePath
+                    module.callAttr("start", webDir.absolutePath, dbPath)
                     serverStarted = true
                 }
-                // کمی صبر تا سرور بالا بیاید
-                SystemClock.sleep(800)
+
+                // ۳) انتظار برای بالا آمدن سرور
+                val ok = waitForServer(20, 500)
+                Log.d(TAG, "server ready=$ok")
+
                 runOnUiThread {
                     hideStatus()
                     webView.loadUrl(HOME)
                 }
             } catch (t: Throwable) {
+                Log.e(TAG, "server start failed", t)
                 runOnUiThread {
                     showStatus("خطا در راه‌اندازی سرور: ${t.message}")
                 }
@@ -214,33 +221,22 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun showStatus(msg: String) {
-        status.text = msg
-        status.visibility = View.VISIBLE
-    }
-
-    private fun hideStatus() {
-        status.visibility = View.GONE
-    }
-
-    override fun onBackPressed() {
-        if (::webView.isInitialized && webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            @Suppress("DEPRECATION")
-            super.onBackPressed()
+    /** چند بار تلاش می‌کند تا سرور جواب بدهد */
+    private fun waitForServer(tries: Int, delayMs: Long): Boolean {
+        repeat(tries) {
+            if (pingServer()) return true
+            SystemClock.sleep(delayMs)
         }
+        return false
     }
 
-    // --- توابع کمکی (در صورت نیاز در آینده) ---
-    @Suppress("unused")
     private fun pingServer(): Boolean {
         return try {
             val conn = URL(HOME).openConnection() as HttpURLConnection
-            conn.connectTimeout = 1500
-            conn.readTimeout = 1500
+            conn.connectTimeout = 1000
+            conn.readTimeout = 1000
             conn.requestMethod = "GET"
-            val ok = conn.responseCode in 200..399
+            val ok = conn.responseCode in 200..499
             conn.disconnect()
             ok
         } catch (_: Exception) {
@@ -248,21 +244,42 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("unused")
-    private fun unzip(zipFile: File, destDir: File) {
-        ZipInputStream(zipFile.inputStream()).use { zis ->
-            var entry = zis.nextEntry
-            while (entry != null) {
-                val outFile = File(destDir, entry.name)
-                if (entry.isDirectory) {
-                    outFile.mkdirs()
-                } else {
-                    outFile.parentFile?.mkdirs()
-                    FileOutputStream(outFile).use { fos -> zis.copyTo(fos) }
-                }
-                zis.closeEntry()
-                entry = zis.nextEntry
+    /** کپی بازگشتی از assets به فایل سیستم */
+    private fun copyAssets(assetPath: String, destDir: File) {
+        val am: AssetManager = assets
+        val children = am.list(assetPath) ?: emptyArray()
+        if (children.isEmpty()) {
+            // فایل
+            destDir.parentFile?.mkdirs()
+            am.open(assetPath).use { input ->
+                FileOutputStream(destDir).use { output -> input.copyTo(output) }
             }
+        } else {
+            destDir.mkdirs()
+            for (child in children) {
+                copyAssets("$assetPath/$child", File(destDir, child))
+            }
+        }
+    }
+
+    private fun showStatus(msg: String) {
+        runOnUiThread {
+            status.text = msg
+            status.visibility = View.VISIBLE
+        }
+    }
+
+    private fun hideStatus() {
+        status.visibility = View.GONE
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (::webView.isInitialized && webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            @Suppress("DEPRECATION")
+            super.onBackPressed()
         }
     }
 }
