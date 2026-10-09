@@ -1,4 +1,3 @@
-
 package ir.darmaniyo.clinic
 
 import android.annotation.SuppressLint
@@ -59,11 +58,3 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val root = FrameLayout(this)
-        webView = WebView(this).apply {
-            visibility = View.INVISIBLE
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.cacheMode = WebSettings.LOAD_DEFAULT
-            settings.setSupportZoom(false)
-            webViewClient = object : WebViewClient() {
-                override 
