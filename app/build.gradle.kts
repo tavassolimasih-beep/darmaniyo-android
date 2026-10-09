@@ -30,18 +30,17 @@ chaquopy {
     defaultConfig {
         version = "3.12"
         pip {
-            install("fastapi==0.115.0")
-            install("uvicorn==0.30.6")
+            install("fastapi==0.110.0")
+            install("uvicorn==0.27.1")
             install("h11==0.14.0")
             install("SQLAlchemy==2.0.35")
             install("python-multipart==0.0.9")
             install("jinja2==3.1.4")
             install("python-dotenv==1.0.1")
-            install("aiofiles==24.1.0")
+            install("aiofiles==23.2.1")
             install("jdatetime==5.0.0")
             install("python-jose==3.3.0")
-            install("pydantic==2.9.2")
-            install("pydantic-core==2.23.4")
+            install("pydantic==2.5.3")
         }
     }
 }
