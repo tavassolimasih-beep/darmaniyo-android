@@ -4,7 +4,7 @@ import secrets
 import threading
 
 
-def start(workdir, db_path):
+def start_server(workdir, db_path):
     """سرور uvicorn را در یک ترد daemon اجرا می‌کند و سریع برمی‌گردد."""
     os.chdir(workdir)
     os.makedirs(os.path.join(workdir, "static", "uploads"), exist_ok=True)
