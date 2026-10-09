@@ -19,27 +19,6 @@ android {
     buildTypes {
         release { isMinifyEnabled = false }
     }
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("com.chaquo.python")
-}
-
-android {
-    namespace = "ir.darmaniyo.clinic"
-    compileSdk = 34
-
-    defaultConfig {
-        applicationId = "ir.darmaniyo.clinic"
-        minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
-        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
-    }
-    buildTypes {
-        release { isMinifyEnabled = false }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
